@@ -1,0 +1,17 @@
+domain: duck.dev
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+projectName: duckdemo
+repo: github.com/tamalsaha/duckdemo
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: duck.dev
+  group: core
+  kind: MyPod
+  path: github.com/tamalsaha/duckdemo/apis/core/v1alpha1
+  version: v1alpha1
+version: "3"
