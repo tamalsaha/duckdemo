@@ -203,13 +203,13 @@ func (blder *Builder) Complete(rb ReconcilerBuilder) error {
 		// b2.WithLogConstructor(blder.)
 
 		r := rb()
-		r.SetLister(lister)
+		r.InjectLister(lister)
 		cc, err := lister.Client(rawGVK)
 		if err != nil {
 			return err
 		}
-		r.SetClient(cc)
-		r.SetScheme(blder.mgr.GetScheme())
+		r.InjectClient(cc)
+		_ = r.InjectScheme(blder.mgr.GetScheme())
 		if err = b2.Complete(r); err != nil {
 			return err
 		}

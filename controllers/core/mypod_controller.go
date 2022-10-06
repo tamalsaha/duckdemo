@@ -69,16 +69,16 @@ func (r *MyPodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	images := sets.NewString()
-	for _, c := range mypod.Spec.Template.Spec.Containers {
-		images.Insert(c.Image)
-	}
-	for _, c := range mypod.Spec.Template.Spec.InitContainers {
-		images.Insert(c.Image)
-	}
-	for _, c := range mypod.Spec.Template.Spec.EphemeralContainers {
-		images.Insert(c.Image)
-	}
+	//images := sets.NewString()
+	//for _, c := range mypod.Spec.Template.Spec.Containers {
+	//	images.Insert(c.Image)
+	//}
+	//for _, c := range mypod.Spec.Template.Spec.InitContainers {
+	//	images.Insert(c.Image)
+	//}
+	//for _, c := range mypod.Spec.Template.Spec.EphemeralContainers {
+	//	images.Insert(c.Image)
+	//}
 
 	// fmt.Println(images.List())
 
@@ -139,15 +139,16 @@ func (r *MyPodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return ctrl.Result{}, nil
 }
 
-func (r *MyPodReconciler) SetClient(c client.Client) {
+func (r *MyPodReconciler) InjectClient(c client.Client) {
 	r.Client = c
 }
 
-func (r *MyPodReconciler) SetScheme(s *runtime.Scheme) {
+func (r *MyPodReconciler) InjectScheme(s *runtime.Scheme) error {
 	r.Scheme = s
+	return nil
 }
 
-func (r *MyPodReconciler) SetLister(l duckclient.Lister) {
+func (r *MyPodReconciler) InjectLister(l duckclient.Lister) {
 	r.lister = l
 }
 

@@ -8,9 +8,9 @@ import (
 )
 
 type DuckReconciler interface {
-	SetClient(client.Client)
-	SetScheme(*runtime.Scheme)
-	SetLister(Lister)
+	InjectClient(client.Client)
+	InjectScheme(*runtime.Scheme) error
+	InjectLister(Lister)
 	// Reconcile performs a full reconciliation for the object referred to by the Request.
 	// The Controller will requeue the Request to be processed again if an error is non-nil or
 	// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
