@@ -6,6 +6,7 @@ import (
 )
 
 type DuckType interface {
+	runtime.Object
 	Duckify(srcRaw runtime.Object) error
 }
 
