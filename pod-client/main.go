@@ -60,6 +60,16 @@ func useKubebuilderClient() error {
 		return err
 	}
 
+	var appobj corev1alpha1.MyPod
+	err = cc.Get(context.TODO(), client.ObjectKey{
+		Namespace: "kube-system",
+		Name:      "coredns",
+	}, &appobj)
+	if err != nil {
+		return err
+	}
+	fmt.Println(appobj.UID)
+
 	// var applist apps.DeploymentList
 	var applist corev1alpha1.MyPodList
 	err = cc.List(context.TODO(), &applist)

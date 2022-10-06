@@ -35,9 +35,26 @@ func NewDuckReader(c client.Client, obj v1alpha1.DuckObject, rawGVK schema.Group
 }
 
 func (d DuckReader) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
+	if err != nil {
+		return err
+	}
+	if gvk != d.duckGVK {
+		return d.c.Get(ctx, key, obj, opts...)
+	}
 
-	//TODO implement me
-	panic("implement me")
+	ll, err := d.c.Scheme().New(d.rawGVK)
+	if err != nil {
+		return err
+	}
+	llo := ll.(client.Object)
+	err = d.c.Get(ctx, key, llo, opts...)
+	if err != nil {
+		return err
+	}
+
+	dd := obj.(v1alpha1.DuckType)
+	return dd.Duckify(llo)
 }
 
 func (d DuckReader) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
