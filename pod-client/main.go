@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-
+	corev1alpha1 "github.com/tamalsaha/duckdemo/apis/core/v1alpha1"
 	apps "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -16,6 +16,7 @@ import (
 func NewClient() (client.Client, error) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
+	_ = corev1alpha1.AddToScheme(scheme)
 
 	ctrl.SetLogger(klogr.New())
 	cfg := ctrl.GetConfigOrDie()
@@ -50,8 +51,17 @@ func useKubebuilderClient() error {
 		return err
 	}
 
+	cc, err := NewDuckReader(
+		kc,
+		&corev1alpha1.MyPod{},
+		corev1alpha1.GroupVersion.WithKind("MyPod"),
+	)
+	if err != nil {
+		return err
+	}
+
 	var applist apps.DeploymentList
-	err = kc.List(context.TODO(), &applist)
+	err = cc.List(context.TODO(), &applist)
 	if err != nil {
 		return err
 	}
