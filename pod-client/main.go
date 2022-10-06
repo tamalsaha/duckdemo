@@ -54,13 +54,14 @@ func useKubebuilderClient() error {
 	cc, err := NewDuckReader(
 		kc,
 		&corev1alpha1.MyPod{},
-		corev1alpha1.GroupVersion.WithKind("MyPod"),
+		apps.SchemeGroupVersion.WithKind("Deployment"),
 	)
 	if err != nil {
 		return err
 	}
 
-	var applist apps.DeploymentList
+	// var applist apps.DeploymentList
+	var applist corev1alpha1.MyPodList
 	err = cc.List(context.TODO(), &applist)
 	if err != nil {
 		return err
