@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/tamalsaha/duckdemo/apis/core/v1alpha1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -11,17 +12,19 @@ import (
 	"strings"
 )
 
-type DuckReader struct {
+type DuckClient struct {
 	c       client.Client // reader?
 	obj     v1alpha1.DuckObject
 	duckGVK schema.GroupVersionKind
 	rawGVK  schema.GroupVersionKind
 }
 
-var _ client.Reader = &DuckReader{}
+var _ client.Reader = &DuckClient{}
+var _ client.Writer = &DuckClient{}
+var _ client.StatusClient = &DuckClient{}
 
 func NewDuckReader(c client.Client, obj v1alpha1.DuckObject, rawGVK schema.GroupVersionKind) (client.Reader, error) {
-	cc := &DuckReader{
+	cc := &DuckClient{
 		c:      c,
 		obj:    obj,
 		rawGVK: rawGVK,
@@ -34,7 +37,17 @@ func NewDuckReader(c client.Client, obj v1alpha1.DuckObject, rawGVK schema.Group
 	return cc, nil
 }
 
-func (d DuckReader) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+// Scheme returns the scheme this client is using.
+func (d *DuckClient) Scheme() *runtime.Scheme {
+	return d.c.Scheme()
+}
+
+// RESTMapper returns the rest this client is using.
+func (d *DuckClient) RESTMapper() apimeta.RESTMapper {
+	return d.c.RESTMapper()
+}
+
+func (d *DuckClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
 	if err != nil {
 		return err
@@ -57,7 +70,7 @@ func (d DuckReader) Get(ctx context.Context, key client.ObjectKey, obj client.Ob
 	return dd.Duckify(llo)
 }
 
-func (d DuckReader) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+func (d *DuckClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
 	gvk, err := apiutil.GVKForObject(list, d.c.Scheme())
 	if err != nil {
 		return err
@@ -106,4 +119,129 @@ func (d DuckReader) List(ctx context.Context, list client.ObjectList, opts ...cl
 		return err
 	}
 	return apimeta.SetList(list, items)
+}
+
+func (d *DuckClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
+	if err != nil {
+		return err
+	}
+	if gvk != d.duckGVK {
+		return d.c.Create(ctx, obj, opts...)
+	}
+	return fmt.Errorf("create not supported for duck type %+v", d.duckGVK)
+}
+
+func (d *DuckClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
+	if err != nil {
+		return err
+	}
+	if gvk != d.duckGVK {
+		return d.c.Delete(ctx, obj, opts...)
+	}
+
+	ll, err := d.c.Scheme().New(d.rawGVK)
+	if err != nil {
+		return err
+	}
+	llo := ll.(client.Object)
+	llo.SetNamespace(obj.GetNamespace())
+	llo.SetName(obj.GetName())
+	llo.SetLabels(obj.GetLabels())
+	return d.c.Delete(ctx, llo, opts...)
+}
+
+func (d *DuckClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
+	if err != nil {
+		return err
+	}
+	if gvk != d.duckGVK {
+		return d.c.Update(ctx, obj, opts...)
+	}
+	return fmt.Errorf("update not supported for duck type %+v", d.duckGVK)
+}
+
+func (d *DuckClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
+	if err != nil {
+		return err
+	}
+	if gvk != d.duckGVK {
+		return d.c.Patch(ctx, obj, patch, opts...)
+	}
+
+	ll, err := d.c.Scheme().New(d.rawGVK)
+	if err != nil {
+		return err
+	}
+	llo := ll.(client.Object)
+	llo.SetNamespace(obj.GetNamespace())
+	llo.SetName(obj.GetName())
+	llo.SetLabels(obj.GetLabels())
+	return d.c.Patch(ctx, llo, patch, opts...)
+}
+
+func (d *DuckClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
+	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
+	if err != nil {
+		return err
+	}
+	if gvk != d.duckGVK {
+		return d.c.DeleteAllOf(ctx, obj, opts...)
+	}
+
+	ll, err := d.c.Scheme().New(d.rawGVK)
+	if err != nil {
+		return err
+	}
+	llo := ll.(client.Object)
+	llo.SetNamespace(obj.GetNamespace())
+	llo.SetName(obj.GetName())
+	llo.SetLabels(obj.GetLabels())
+	return d.c.DeleteAllOf(ctx, llo, opts...)
+}
+
+func (d *DuckClient) Status() client.StatusWriter {
+	return &statusWriter{client: d}
+}
+
+// statusWriter is client.StatusWriter that writes status subresource.
+type statusWriter struct {
+	client *DuckClient
+}
+
+// ensure statusWriter implements client.StatusWriter.
+var _ client.StatusWriter = &statusWriter{}
+
+func (sw *statusWriter) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	gvk, err := apiutil.GVKForObject(obj, sw.client.c.Scheme())
+	if err != nil {
+		return err
+	}
+	if gvk != sw.client.duckGVK {
+		return sw.client.c.Status().Update(ctx, obj, opts...)
+	}
+	return fmt.Errorf("update not supported for duck type %+v", sw.client.duckGVK)
+}
+
+func (sw *statusWriter) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	gvk, err := apiutil.GVKForObject(obj, sw.client.c.Scheme())
+	if err != nil {
+		return err
+	}
+	if gvk != sw.client.duckGVK {
+		return sw.client.c.Status().Patch(ctx, obj, patch, opts...)
+	}
+
+	ll, err := sw.client.c.Scheme().New(sw.client.rawGVK)
+	if err != nil {
+		return err
+	}
+	llo := ll.(client.Object)
+	llo.SetNamespace(obj.GetNamespace())
+	llo.SetName(obj.GetName())
+	llo.SetLabels(obj.GetLabels())
+	return sw.client.c.Status().Patch(ctx, llo, patch, opts...)
 }
