@@ -17,8 +17,10 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -107,9 +109,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	mgr.Add(&CC{
+		c:      mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	})
+
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+type CC struct {
+	c      client.Client
+	Scheme *runtime.Scheme
+}
+
+func (c *CC) Start(context.Context) error {
+	return nil
 }
