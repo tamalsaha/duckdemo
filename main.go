@@ -91,10 +91,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&corecontrollers.MyPodReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	if err = (&corecontrollers.MyPodReconciler{}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MyPod")
 		os.Exit(1)
 	}
