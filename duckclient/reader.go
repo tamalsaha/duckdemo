@@ -1,4 +1,4 @@
-package main
+package duckclient
 
 import (
 	"context"
@@ -23,18 +23,34 @@ var _ client.Reader = &DuckClient{}
 var _ client.Writer = &DuckClient{}
 var _ client.StatusClient = &DuckClient{}
 
-func NewDuckReader(c client.Client, obj v1alpha1.DuckObject, rawGVK schema.GroupVersionKind) (client.Reader, error) {
-	cc := &DuckClient{
-		c:      c,
-		obj:    obj,
-		rawGVK: rawGVK,
+type ClientBuilder struct {
+	cc *DuckClient
+}
+
+func NewClient() *ClientBuilder {
+	return &ClientBuilder{
+		cc: new(DuckClient),
 	}
-	gvk, err := apiutil.GVKForObject(obj, c.Scheme())
+}
+
+func (b *ClientBuilder) ForDuckType(obj v1alpha1.DuckObject) *ClientBuilder {
+	b.cc.obj = obj
+	return b
+}
+
+func (b *ClientBuilder) WithUnderlyingType(rawGVK schema.GroupVersionKind) *ClientBuilder {
+	b.cc.rawGVK = rawGVK
+	return b
+}
+
+func (b *ClientBuilder) Build(c client.Client) (client.Client, error) {
+	b.cc.c = c
+	gvk, err := apiutil.GVKForObject(b.cc.obj, c.Scheme())
 	if err != nil {
 		return nil, err
 	}
-	cc.duckGVK = gvk
-	return cc, nil
+	b.cc.duckGVK = gvk
+	return b.cc, nil
 }
 
 // Scheme returns the scheme this client is using.
