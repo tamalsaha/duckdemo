@@ -23,27 +23,27 @@ var _ client.Reader = &DuckClient{}
 var _ client.Writer = &DuckClient{}
 var _ client.StatusClient = &DuckClient{}
 
-type ClientBuilder struct {
+type DuckClientBuilder struct {
 	cc *DuckClient
 }
 
-func NewClient() *ClientBuilder {
-	return &ClientBuilder{
+func NewClient() *DuckClientBuilder {
+	return &DuckClientBuilder{
 		cc: new(DuckClient),
 	}
 }
 
-func (b *ClientBuilder) ForDuckType(obj v1alpha1.DuckObject) *ClientBuilder {
+func (b *DuckClientBuilder) ForDuckType(obj v1alpha1.DuckObject) *DuckClientBuilder {
 	b.cc.obj = obj
 	return b
 }
 
-func (b *ClientBuilder) WithUnderlyingType(rawGVK schema.GroupVersionKind) *ClientBuilder {
+func (b *DuckClientBuilder) WithUnderlyingType(rawGVK schema.GroupVersionKind) *DuckClientBuilder {
 	b.cc.rawGVK = rawGVK
 	return b
 }
 
-func (b *ClientBuilder) Build(c client.Client) (client.Client, error) {
+func (b *DuckClientBuilder) Build(c client.Client) (client.Client, error) {
 	b.cc.c = c
 	gvk, err := apiutil.GVKForObject(b.cc.obj, c.Scheme())
 	if err != nil {
