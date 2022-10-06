@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,17 +26,7 @@ import (
 
 // MyPodSpec defines the desired state of MyPod
 type MyPodSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of MyPod. Edit mypod_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
-
-// MyPodStatus defines the observed state of MyPod
-type MyPodStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Template corev1.PodTemplateSpec `json:"template,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -46,8 +37,7 @@ type MyPod struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MyPodSpec   `json:"spec,omitempty"`
-	Status MyPodStatus `json:"status,omitempty"`
+	Spec MyPodSpec `json:"spec,omitempty"`
 }
 
 //+kubebuilder:object:root=true
