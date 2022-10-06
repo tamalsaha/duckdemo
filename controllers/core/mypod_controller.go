@@ -18,8 +18,10 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"github.com/tamalsaha/duckdemo/duckclient"
 	apps "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,10 +54,36 @@ var _ duckclient.DuckReconciler = &MyPodReconciler{}
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *MyPodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
 
 	// TODO(user): your logic here
+	var mypod corev1alpha1.MyPod
+	if err := r.Get(ctx, req.NamespacedName, &mypod); err != nil {
+		log.Error(err, "unable to fetch CronJob")
+		// we'll ignore not-found errors, since they can't be fixed by an immediate
+		// requeue (we'll need to wait for a new notification), and we can get them
+		// on deleted requests.
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
 
+	images := sets.NewString()
+	for _, c := range mypod.Spec.Template.Spec.Containers {
+		images.Insert(c.Image)
+	}
+	for _, c := range mypod.Spec.Template.Spec.InitContainers {
+		images.Insert(c.Image)
+	}
+	for _, c := range mypod.Spec.Template.Spec.EphemeralContainers {
+		images.Insert(c.Image)
+	}
+
+	fmt.Println(images.List())
+
+	//var pods corev1.PodList
+	//r.List(context.TODO(), &pods,
+	//	client.InNamespace(mypod.Namespace),
+	//	client.MatchingLabels{})
+	//
 	return ctrl.Result{}, nil
 }
 
