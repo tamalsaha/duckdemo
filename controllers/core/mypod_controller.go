@@ -19,6 +19,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/tamalsaha/duckdemo/duckclient"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -79,7 +80,7 @@ func (r *MyPodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		images.Insert(c.Image)
 	}
 
-	fmt.Println(images.List())
+	// fmt.Println(images.List())
 
 	sel, err := metav1.LabelSelectorAsSelector(mypod.Spec.Selector)
 	if err != nil {
@@ -94,16 +95,43 @@ func (r *MyPodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
+	fnRef := func(c corev1.ContainerStatus) (string, error) {
+		imageRef, err := name.ParseReference(c.Image)
+		if err != nil {
+			return "", err
+		}
+		imageIDRef, err := name.ParseReference(c.ImageID)
+		if err != nil {
+			return "", err
+		}
+		if imageRef.Context() != imageIDRef.Context() {
+			return c.Image, nil
+		}
+		return c.ImageID, nil
+	}
+
 	refs := sets.NewString()
 	for _, pod := range pods.Items {
 		for _, c := range pod.Status.ContainerStatuses {
-			refs.Insert(c.ImageID)
+			ref, err := fnRef(c)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			refs.Insert(ref)
 		}
 		for _, c := range pod.Status.InitContainerStatuses {
-			refs.Insert(c.ImageID)
+			ref, err := fnRef(c)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			refs.Insert(ref)
 		}
 		for _, c := range pod.Status.EphemeralContainerStatuses {
-			refs.Insert(c.ImageID)
+			ref, err := fnRef(c)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			refs.Insert(ref)
 		}
 	}
 	fmt.Println(refs.List())
