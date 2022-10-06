@@ -9,28 +9,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-)
-
-// Supporting mocking out functions for testing.
-var newController = controller.New
-var getGvk = apiutil.GVKForObject
-
-// project represents other forms that the we can use to
-// send/receive a given resource (metadata-only, unstructured, etc).
-type objectProjection int
-
-const (
-	// projectAsNormal doesn't change the object from the form given.
-	projectAsNormal objectProjection = iota
-	// projectAsMetadata turns this into an metadata-only watch.
-	projectAsMetadata
 )
 
 // Builder builds a Controller.
@@ -226,6 +210,7 @@ func (blder *Builder) Complete(rb ReconcilerBuilder) error {
 			return err
 		}
 		r.SetClient(cc)
+		r.SetScheme(blder.mgr.GetScheme())
 		if err = b2.Complete(r); err != nil {
 			return err
 		}

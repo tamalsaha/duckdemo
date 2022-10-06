@@ -18,6 +18,8 @@ package core
 
 import (
 	"context"
+	"github.com/tamalsaha/duckdemo/duckclient"
+	apps "k8s.io/api/apps/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,7 +33,10 @@ import (
 type MyPodReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	lister duckclient.Lister
 }
+
+var _ duckclient.DuckReconciler = &MyPodReconciler{}
 
 //+kubebuilder:rbac:groups=core.duck.dev,resources=mypods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core.duck.dev,resources=mypods/status,verbs=get;update;patch
@@ -54,9 +59,28 @@ func (r *MyPodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return ctrl.Result{}, nil
 }
 
+func (r *MyPodReconciler) SetClient(c client.Client) {
+	r.Client = c
+}
+
+func (r *MyPodReconciler) SetScheme(s *runtime.Scheme) {
+	r.Scheme = s
+}
+
+func (r *MyPodReconciler) SetLister(l duckclient.Lister) {
+	r.lister = l
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *MyPodReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	return duckclient.ControllerManagedBy(mgr).
 		For(&corev1alpha1.MyPod{}).
-		Complete(r)
+		WithUnderlyingTypes(
+			apps.SchemeGroupVersion.WithKind("Deployment"),
+			apps.SchemeGroupVersion.WithKind("StatefulSet"),
+			apps.SchemeGroupVersion.WithKind("DaemonSet"),
+		).
+		Complete(func() duckclient.DuckReconciler {
+			return new(MyPodReconciler)
+		})
 }
