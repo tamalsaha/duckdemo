@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	corev1alpha1 "github.com/tamalsaha/duckdemo/apis/core/v1alpha1"
-	"github.com/tamalsaha/duckdemo/duckclient"
 	apps "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2/klogr"
+	"kmodules.xyz/client-go/client/duck"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -52,7 +52,7 @@ func useKubebuilderClient() error {
 		return err
 	}
 
-	cc, err := duckclient.NewClient().
+	cc, err := duck.NewClient().
 		ForDuckType(&corev1alpha1.MyPod{}).
 		WithUnderlyingType(apps.SchemeGroupVersion.WithKind("Deployment")).
 		Build(kc)

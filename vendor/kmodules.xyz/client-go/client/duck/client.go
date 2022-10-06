@@ -1,48 +1,67 @@
-package duckclient
+/*
+Copyright AppsCode Inc. and Contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package duck
 
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	"strings"
 )
 
-type DuckClient struct {
+type Client struct {
 	c       client.Client // reader?
-	obj     DuckObject
+	obj     Object
 	duckGVK schema.GroupVersionKind
 	rawGVK  schema.GroupVersionKind
 }
 
-var _ client.Reader = &DuckClient{}
-var _ client.Writer = &DuckClient{}
-var _ client.StatusClient = &DuckClient{}
+var (
+	_ client.Reader       = &Client{}
+	_ client.Writer       = &Client{}
+	_ client.StatusClient = &Client{}
+)
 
-type DuckClientBuilder struct {
-	cc *DuckClient
+type ClientBuilder struct {
+	cc *Client
 }
 
-func NewClient() *DuckClientBuilder {
-	return &DuckClientBuilder{
-		cc: new(DuckClient),
+func NewClient() *ClientBuilder {
+	return &ClientBuilder{
+		cc: new(Client),
 	}
 }
 
-func (b *DuckClientBuilder) ForDuckType(obj DuckObject) *DuckClientBuilder {
+func (b *ClientBuilder) ForDuckType(obj Object) *ClientBuilder {
 	b.cc.obj = obj
 	return b
 }
 
-func (b *DuckClientBuilder) WithUnderlyingType(rawGVK schema.GroupVersionKind) *DuckClientBuilder {
+func (b *ClientBuilder) WithUnderlyingType(rawGVK schema.GroupVersionKind) *ClientBuilder {
 	b.cc.rawGVK = rawGVK
 	return b
 }
 
-func (b *DuckClientBuilder) Build(c client.Client) (client.Client, error) {
+func (b *ClientBuilder) Build(c client.Client) (client.Client, error) {
 	b.cc.c = c
 	gvk, err := apiutil.GVKForObject(b.cc.obj, c.Scheme())
 	if err != nil {
@@ -53,16 +72,16 @@ func (b *DuckClientBuilder) Build(c client.Client) (client.Client, error) {
 }
 
 // Scheme returns the scheme this client is using.
-func (d *DuckClient) Scheme() *runtime.Scheme {
+func (d *Client) Scheme() *runtime.Scheme {
 	return d.c.Scheme()
 }
 
 // RESTMapper returns the rest this client is using.
-func (d *DuckClient) RESTMapper() apimeta.RESTMapper {
+func (d *Client) RESTMapper() apimeta.RESTMapper {
 	return d.c.RESTMapper()
 }
 
-func (d *DuckClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+func (d *Client) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
 	if err != nil {
 		return err
@@ -81,11 +100,11 @@ func (d *DuckClient) Get(ctx context.Context, key client.ObjectKey, obj client.O
 		return err
 	}
 
-	dd := obj.(DuckType)
+	dd := obj.(Object)
 	return dd.Duckify(llo)
 }
 
-func (d *DuckClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+func (d *Client) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
 	gvk, err := apiutil.GVKForObject(list, d.c.Scheme())
 	if err != nil {
 		return err
@@ -122,7 +141,7 @@ func (d *DuckClient) List(ctx context.Context, list client.ObjectList, opts ...c
 		if err != nil {
 			return err
 		}
-		dd := d2.(DuckType)
+		dd := d2.(Object)
 		err = dd.Duckify(object)
 		if err != nil {
 			return err
@@ -136,7 +155,7 @@ func (d *DuckClient) List(ctx context.Context, list client.ObjectList, opts ...c
 	return apimeta.SetList(list, items)
 }
 
-func (d *DuckClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+func (d *Client) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
 	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
 	if err != nil {
 		return err
@@ -147,7 +166,7 @@ func (d *DuckClient) Create(ctx context.Context, obj client.Object, opts ...clie
 	return fmt.Errorf("create not supported for duck type %+v", d.duckGVK)
 }
 
-func (d *DuckClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+func (d *Client) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
 	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
 	if err != nil {
 		return err
@@ -167,7 +186,7 @@ func (d *DuckClient) Delete(ctx context.Context, obj client.Object, opts ...clie
 	return d.c.Delete(ctx, llo, opts...)
 }
 
-func (d *DuckClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+func (d *Client) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
 	if err != nil {
 		return err
@@ -178,7 +197,7 @@ func (d *DuckClient) Update(ctx context.Context, obj client.Object, opts ...clie
 	return fmt.Errorf("update not supported for duck type %+v", d.duckGVK)
 }
 
-func (d *DuckClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (d *Client) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
 	if err != nil {
 		return err
@@ -198,7 +217,7 @@ func (d *DuckClient) Patch(ctx context.Context, obj client.Object, patch client.
 	return d.c.Patch(ctx, llo, patch, opts...)
 }
 
-func (d *DuckClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
+func (d *Client) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
 	gvk, err := apiutil.GVKForObject(obj, d.c.Scheme())
 	if err != nil {
 		return err
@@ -218,13 +237,13 @@ func (d *DuckClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ..
 	return d.c.DeleteAllOf(ctx, llo, opts...)
 }
 
-func (d *DuckClient) Status() client.StatusWriter {
+func (d *Client) Status() client.StatusWriter {
 	return &statusWriter{client: d}
 }
 
 // statusWriter is client.StatusWriter that writes status subresource.
 type statusWriter struct {
-	client *DuckClient
+	client *Client
 }
 
 // ensure statusWriter implements client.StatusWriter.

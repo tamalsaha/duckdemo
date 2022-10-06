@@ -20,28 +20,26 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/tamalsaha/duckdemo/duckclient"
+	corev1alpha1 "github.com/tamalsaha/duckdemo/apis/core/v1alpha1"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"kmodules.xyz/client-go/client/duck"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	corev1alpha1 "github.com/tamalsaha/duckdemo/apis/core/v1alpha1"
 )
 
 // MyPodReconciler reconciles a MyPod object
 type MyPodReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
-	lister duckclient.Lister
+	lister duck.Lister
 }
 
-var _ duckclient.DuckReconciler = &MyPodReconciler{}
+var _ duck.Reconciler = &MyPodReconciler{}
 
 //+kubebuilder:rbac:groups=core.duck.dev,resources=mypods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core.duck.dev,resources=mypods/status,verbs=get;update;patch
@@ -148,20 +146,20 @@ func (r *MyPodReconciler) InjectScheme(s *runtime.Scheme) error {
 	return nil
 }
 
-func (r *MyPodReconciler) InjectLister(l duckclient.Lister) {
+func (r *MyPodReconciler) InjectLister(l duck.Lister) {
 	r.lister = l
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MyPodReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return duckclient.ControllerManagedBy(mgr).
+	return duck.ControllerManagedBy(mgr).
 		For(&corev1alpha1.MyPod{}).
 		WithUnderlyingTypes(
 			apps.SchemeGroupVersion.WithKind("Deployment"),
 			apps.SchemeGroupVersion.WithKind("StatefulSet"),
 			apps.SchemeGroupVersion.WithKind("DaemonSet"),
 		).
-		Complete(func() duckclient.DuckReconciler {
+		Complete(func() duck.Reconciler {
 			return new(MyPodReconciler)
 		})
 }
