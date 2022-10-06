@@ -2,7 +2,6 @@ package duckclient
 
 import (
 	"context"
-	"github.com/tamalsaha/duckdemo/apis/core/v1alpha1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,7 +22,7 @@ type Lister interface {
 
 type DuckLister struct {
 	c       client.Client // reader?
-	obj     v1alpha1.DuckObject
+	obj     DuckObject
 	duckGVK schema.GroupVersionKind
 	rawGVK  []schema.GroupVersionKind
 }
@@ -40,7 +39,7 @@ func NewLister() *DuckListerBuilder {
 	}
 }
 
-func (b *DuckListerBuilder) ForDuckType(obj v1alpha1.DuckObject) *DuckListerBuilder {
+func (b *DuckListerBuilder) ForDuckType(obj DuckObject) *DuckListerBuilder {
 	b.cc.obj = obj
 	return b
 }
@@ -118,7 +117,7 @@ func (d *DuckLister) List(ctx context.Context, list client.ObjectList, opts ...c
 			if err != nil {
 				return err
 			}
-			dd := d2.(v1alpha1.DuckType)
+			dd := d2.(DuckType)
 			err = dd.Duckify(object)
 			if err != nil {
 				return err

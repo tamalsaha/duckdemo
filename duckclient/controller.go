@@ -3,7 +3,6 @@ package duckclient
 import (
 	"fmt"
 	"github.com/go-logr/logr"
-	"github.com/tamalsaha/duckdemo/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	errors2 "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,7 +35,7 @@ func ControllerManagedBy(m manager.Manager) *Builder {
 
 // ForInput represents the information set by For method.
 type ForInput struct {
-	object  v1alpha1.DuckObject
+	object  DuckObject
 	rawGVKs []schema.GroupVersionKind
 	opts    []builder.ForOption
 	err     error
@@ -46,7 +45,7 @@ type ForInput struct {
 // update events by *reconciling the object*.
 // This is the equivalent of calling
 // Watches(&source.Kind{Type: apiType}, &handler.EnqueueRequestForObject{}).
-func (blder *Builder) For(object v1alpha1.DuckObject, opts ...builder.ForOption) *Builder {
+func (blder *Builder) For(object DuckObject, opts ...builder.ForOption) *Builder {
 	if blder.forInput.object != nil {
 		blder.forInput.err = errors2.NewAggregate([]error{
 			blder.forInput.err,
@@ -93,7 +92,7 @@ func (blder *Builder) Owns(object client.Object, opts ...builder.OwnsOption) *Bu
 		object: object,
 		opts:   opts,
 	}
-	if _, ok := object.(v1alpha1.DuckObject); ok {
+	if _, ok := object.(DuckObject); ok {
 		input.err = fmt.Errorf("Owns(...) can't be called on duck types")
 	}
 

@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"github.com/tamalsaha/duckdemo/duckclient"
 	apps "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -79,11 +81,33 @@ func (r *MyPodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	fmt.Println(images.List())
 
-	//var pods corev1.PodList
-	//r.List(context.TODO(), &pods,
-	//	client.InNamespace(mypod.Namespace),
-	//	client.MatchingLabels{})
-	//
+	sel, err := metav1.LabelSelectorAsSelector(mypod.Spec.Selector)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	var pods corev1.PodList
+	err = r.List(context.TODO(), &pods,
+		client.InNamespace(mypod.Namespace),
+		client.MatchingLabelsSelector{Selector: sel})
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	refs := sets.NewString()
+	for _, pod := range pods.Items {
+		for _, c := range pod.Status.ContainerStatuses {
+			refs.Insert(c.ImageID)
+		}
+		for _, c := range pod.Status.InitContainerStatuses {
+			refs.Insert(c.ImageID)
+		}
+		for _, c := range pod.Status.EphemeralContainerStatuses {
+			refs.Insert(c.ImageID)
+		}
+	}
+	fmt.Println(refs.List())
+
 	return ctrl.Result{}, nil
 }
 

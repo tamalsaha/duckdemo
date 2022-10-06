@@ -16,6 +16,7 @@ func (dst *MyPod) Duckify(srcRaw runtime.Object) error {
 			APIVersion: apps.SchemeGroupVersion.String(),
 		}
 		dst.ObjectMeta = src.ObjectMeta
+		dst.Spec.Selector = src.Spec.Selector
 		dst.Spec.Template = src.Spec.Template
 		return nil
 	case *apps.StatefulSet:
@@ -24,6 +25,7 @@ func (dst *MyPod) Duckify(srcRaw runtime.Object) error {
 			APIVersion: apps.SchemeGroupVersion.String(),
 		}
 		dst.ObjectMeta = src.ObjectMeta
+		dst.Spec.Selector = src.Spec.Selector
 		dst.Spec.Template = src.Spec.Template
 		return nil
 	case *apps.DaemonSet:
@@ -32,6 +34,7 @@ func (dst *MyPod) Duckify(srcRaw runtime.Object) error {
 			APIVersion: apps.SchemeGroupVersion.String(),
 		}
 		dst.ObjectMeta = src.ObjectMeta
+		dst.Spec.Selector = src.Spec.Selector
 		dst.Spec.Template = src.Spec.Template
 		return nil
 	case *unstructured.Unstructured:

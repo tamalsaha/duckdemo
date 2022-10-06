@@ -26,6 +26,12 @@ import (
 
 // MyPodSpec defines the desired state of MyPod
 type MyPodSpec struct {
+	// A label query over pods that are managed by the daemon set.
+	// Must match in order to be controlled.
+	// It must match the pod template's labels.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
+	Selector *metav1.LabelSelector `json:"selector"`
+
 	Template corev1.PodTemplateSpec `json:"template,omitempty"`
 }
 
