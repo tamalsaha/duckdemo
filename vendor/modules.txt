@@ -585,7 +585,7 @@ k8s.io/utils/net
 k8s.io/utils/pointer
 k8s.io/utils/strings/slices
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.25.7-0.20221006074647-4ed733160b39
+# kmodules.xyz/client-go v0.25.7-0.20221006085910-705a65c7033d
 ## explicit; go 1.18
 kmodules.xyz/client-go/client/duck
 # sigs.k8s.io/controller-runtime v0.13.0
