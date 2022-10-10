@@ -36,7 +36,6 @@ import (
 type MyPodReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
-	lister duck.Lister
 }
 
 var _ duck.Reconciler = &MyPodReconciler{}
@@ -144,10 +143,6 @@ func (r *MyPodReconciler) InjectClient(c client.Client) {
 func (r *MyPodReconciler) InjectScheme(s *runtime.Scheme) error {
 	r.Scheme = s
 	return nil
-}
-
-func (r *MyPodReconciler) InjectLister(l duck.Lister) {
-	r.lister = l
 }
 
 // SetupWithManager sets up the controller with the Manager.
