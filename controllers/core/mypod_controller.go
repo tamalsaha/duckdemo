@@ -24,21 +24,21 @@ import (
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"kmodules.xyz/client-go/client/duck"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
 // MyPodReconciler reconciles a MyPod object
 type MyPodReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
 }
 
 var _ duck.Reconciler = &MyPodReconciler{}
+var _ inject.Client = &MyPodReconciler{}
 
 //+kubebuilder:rbac:groups=core.duck.dev,resources=mypods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core.duck.dev,resources=mypods/status,verbs=get;update;patch
@@ -136,12 +136,8 @@ func (r *MyPodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return ctrl.Result{}, nil
 }
 
-func (r *MyPodReconciler) InjectClient(c client.Client) {
+func (r *MyPodReconciler) InjectClient(c client.Client) error {
 	r.Client = c
-}
-
-func (r *MyPodReconciler) InjectScheme(s *runtime.Scheme) error {
-	r.Scheme = s
 	return nil
 }
 
