@@ -97,7 +97,7 @@ func useKubebuilderClient() error {
 	}
 	fmt.Println()
 	for _, db := range applist.Items {
-		fmt.Println(client.ObjectKeyFromObject(&db))
+		fmt.Println(db.GetObjectKind().GroupVersionKind(), client.ObjectKeyFromObject(&db))
 	}
 	return nil
 }
