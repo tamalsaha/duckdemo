@@ -61,6 +61,16 @@ func useKubebuilderClient() error {
 		return err
 	}
 
+	var u unstructured.Unstructured
+	u.SetAPIVersion("v1")
+	u.SetKind("Pod")
+
+	gvk, err := apiutil.GVKForObject(&u, kc.Scheme())
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%+v\n", gvk)
+
 	cc, err := duck.NewClient().
 		ForDuckType(&corev1alpha1.MyPod{}).
 		WithUnderlyingType(ObjectOf(apps.SchemeGroupVersion.WithKind("Deployment"))).
