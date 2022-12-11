@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	corev1alpha1 "github.com/tamalsaha/duckdemo/apis/core/v1alpha1"
 	apps "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,6 +48,12 @@ func main() {
 	}
 }
 
+func ObjectOf(gvk schema.GroupVersionKind) client.Object {
+	var u unstructured.Unstructured
+	u.SetGroupVersionKind(gvk)
+	return &u
+}
+
 func useKubebuilderClient() error {
 	fmt.Println("Using kubebuilder client")
 	kc, err := NewClient()
@@ -54,7 +63,7 @@ func useKubebuilderClient() error {
 
 	cc, err := duck.NewClient().
 		ForDuckType(&corev1alpha1.MyPod{}).
-		WithUnderlyingType(apps.SchemeGroupVersion.WithKind("Deployment")).
+		WithUnderlyingType(ObjectOf(apps.SchemeGroupVersion.WithKind("Deployment"))).
 		Build(kc)
 	if err != nil {
 		return err
